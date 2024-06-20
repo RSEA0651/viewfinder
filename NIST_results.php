@@ -31,17 +31,16 @@
     </div>
   </header>
   <?php
+
   $urlData = "./report/index.php?" . $_SERVER["QUERY_STRING"];
   parse_str($_SERVER["QUERY_STRING"], $data);
   $string = file_get_contents("controls.json");
   $json = json_decode($string, true);
-  $string_nist = file_get_contents("nist_controls.json");
-  $json_nist = json_decode($string_nist, true);
-  $json = array_merge($json, $json_nist);
-  $controls = array_keys($json);
 
-  $controlTotal = array_fill(0, 8, 0);
-  $controlDetails = array(array_fill(0, 8, 0));
+  $controls = array_keys($json);
+  
+  $controlTotal = array_fill(0, 9, 0);
+  $controlDetails = array(array_fill(0, 9, 0));
 
   foreach ($data as $field => $value) {
     if (strpos($field, "control") !== false) {
@@ -52,42 +51,44 @@
 
   function getRating($score) {
     $rating = "Foundation";
-    switch ($score) {
-      case ($score > 9 && $score < 22):
-        $rating = "Strategic";
-        break;
-      case ($score > 27):
-        $rating = "Advanced";
+    if ($score > 9 && $score < 22) {
+      $rating = "Strategic";
+    } elseif ($score > 27) {
+      $rating = "Advanced";
     }
     return $rating;
   }
 
   function getTotalRating($score) {
     $rating = "Foundation";
-    switch ($score) {
-      case ($score > 84 && $score < 168):
-        $rating = "Strategic";
-        break;
-      case ($score > 169):
-        $rating = "Advanced";
+    if ($score > 84 && $score < 168) {
+      $rating = "Strategic";
+    } elseif ($score > 169) {
+      $rating = "Advanced";
     }
     return $rating;
   }
 
   $totalScore = 0;
+
   ?>
+
   <div class="container">
+
     <div class="tab">
       <button class="tablinks" onclick="openTab(event, 'Radar')" id="defaultOpen">Radar Chart & Maturity Levels</button>
       <button class="tablinks" onclick="openTab(event, 'DetailedOutput')">Recommendations</button>
       <button class="tablinks" onclick="openTab(event, 'NextSteps')">Agenda</button>
-      <button class="tablinks"><a href="<?php print $urlData; ?>" target=_blank>Detailed Output</a></button>
+      <button class="tablinks"><a href="<?php print $urlData; ?>" target= _blank>Detailed Output</a></button>
     </div>
+
     <div id="Radar" class="tabcontent">
+
       <div class="htmlChart">
         <div class="radarChart"></div>
       </div>
       <div class="bigtableLeft">
+
         <table class="spacedTable">
           <thead>
             <tr>
@@ -112,7 +113,9 @@
           ?>
       </div>
     </div>
+    <!-- Detailed Output -->
     <div id="DetailedOutput" class="tabcontent">
+
       <div id="accordion">
         <?php
         foreach ($controls as $control) {
@@ -120,7 +123,6 @@
           $qnum = $json[$control]['qnum'];
           $score = $controlTotal[$qnum];
           $title = $json[$control]['title'];
-          array_push($nextDomain, $title);
           print "<h3>$title <span class='cellHeader" . getRating($score) . "'>" . getRating($score) . "</span></h3><div>";
 
           $levelArray = array();
@@ -155,28 +157,27 @@
             print "<p>You're doing great as you are!</p>";
           }
 
-          if ($levelArray) {
-            $allLevels = range(1, max($levelArray));
-            $missing = array_diff($allLevels, $levelArray);
-            if ($missing) {
-              print "<br><br><h4 class=why-what>Skipped Level(s)</h4>";
-              foreach ($missing as $notthere) {
-                $skippedRecommendation = $notthere . '-recommendation';
-                print "Level $notthere - ";
-                if ($json[$control][$skippedRecommendation] != "") {
-                  print $json[$control][$skippedRecommendation] . ". ";
-                } else {
-                  $notthereComment = $notthere . "-summary";
-                  print $json[$control][$notthereComment];
-                }
-                print "<br>";
+          $allLevels = range(1, max($levelArray));
+          $missing = array_diff($allLevels, $levelArray);
+          if ($missing) {
+            print "<br><br><h4 class=why-what>Skipped Level(s)</h4>";
+            foreach ($missing as $notthere) {
+              $skippedRecommendation = $notthere . '-recommendation';
+              print "Level $notthere - ";
+              if ($json[$control][$skippedRecommendation] != "") {
+                print $json[$control][$skippedRecommendation] . ". ";
+              } else {
+                $notthereComment = $notthere . "-summary";
+                print $json[$control][$notthereComment];
               }
+              print "<br>";
             }
           }
           print "</div>";
         }
         ?>
       </div>
+      <!-- End of Detailed Output -->
     </div>
     <div id="NextSteps" class="tabcontent">
       <div class="nextStepsPage">
@@ -241,26 +242,27 @@
       </div>
     </div>
   </div>
+
   <script src="js/radarChart.js"></script>
   <script>
-    var margin = {top: 100, right: 100, bottom: 100, left: 100},
+    var margin = {
+        top: 100,
+        right: 100,
+        bottom: 100,
+        left: 100
+      },
       width = Math.min(700, window.innerWidth - 10) - margin.left - margin.right,
       height = Math.min(width, window.innerHeight - margin.top - margin.bottom - 20);
 
     var data = [
       [
-        {axis:"Secure Infrastructure", value:<?php echo $controlTotal[1]; ?>},
-        {axis:"Secure Data", value:<?php echo $controlTotal[2]; ?>},
-        {axis:"Secure Identity", value:<?php echo $controlTotal[3]; ?>},
-        {axis:"Secure Application", value:<?php echo $controlTotal[4]; ?>},
-        {axis:"Secure Network", value:<?php echo $controlTotal[5]; ?>},
-        {axis:"Secure Recovery", value:<?php echo $controlTotal[6]; ?>},
-        {axis:"Secure Operations", value:<?php echo $controlTotal[7]; ?>}
+        {axis: "AC", value: <?php echo $controlTotal[1]; ?>},
+        {axis: "AT", value: <?php echo $controlTotal[2]; ?>},
+        {axis: "AU", value: <?php echo $controlTotal[3]; ?>}
       ]
     ];
 
-    var color = d3.scale.ordinal()
-      .range(["#CC333F","#CC333F","#00A0B0"]);
+    var color = d3.scale.ordinal().range(["#CC333F", "#00A0B0"]);
 
     var radarChartOptions = {
       w: width,
@@ -268,7 +270,7 @@
       margin: margin,
       maxValue: 0.5,
       roundStrokes: true,
-      color: color,
+      color: color
     };
 
     RadarChart(".radarChart", data, radarChartOptions);
@@ -276,17 +278,14 @@
   <script type="text/javascript">
     function openTab(evt, cityName) {
       var i, tabcontent, tablinks;
-
       tabcontent = document.getElementsByClassName("tabcontent");
       for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
       }
-
       tablinks = document.getElementsByClassName("tablinks");
       for (i = 0; i < tablinks.length; i++) {
         tablinks[i].className = tablinks[i].className.replace(" active", "");
       }
-
       document.getElementById(cityName).style.display = "block";
       evt.currentTarget.className += " active";
     }
