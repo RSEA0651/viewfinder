@@ -50,10 +50,6 @@
     $string = file_get_contents("controls.json");
     $json = json_decode($string, true);
 
-    $string_nist = file_get_contents("nist_controls.json");
-    $json_nist = json_decode($string_nist, true);
-
-    $json = array_merge($json, $json_nist);
     $controls = array_keys($json);
 
     function getControls($area, $json) {
@@ -64,7 +60,7 @@
       $control = $area;
       print "<p>" . $json[$area]['overview'] . "</p>";
       print "<ul class='ks-cboxtags'>\n";
-      while ($i < 9) {
+      while ($i < 8) {
         $summary = $i . '-summary';
         $itemSummary = $json[$area][$summary] ? '&nbsp; <i class="fa-solid fa-circle-info" style="display: inline-block;max-width: 100px;" title="' . $json[$area][$summary] . '"></i>' : "";
         $tier = $i . '-tier';
@@ -121,11 +117,4 @@
       }
 
       document.getElementById(cityName).style.display = "block";
-      evt.currentTarget.className += " active";
-    }
-  </script>
-  <script type="text/javascript">
-    document.getElementById("defaultOpen").click();
-  </script>
-</body>
-</html>
+      evt.currentTarget.className
