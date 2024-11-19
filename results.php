@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/patternfly.css" />
 <link rel="stylesheet" href="css/patternfly-addons.css" />
 <link rel="stylesheet" href="css/tab.css">
+<link rel="stylesheet" href="css/table2.css">
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 <script src="https://kit.fontawesome.com/8a8c57f9cf.js" crossorigin="anonymous"></script>
@@ -34,21 +36,20 @@
                 </div>
 </header>
 <?php
-
 $urlData = "./report/index.php?" . $_SERVER["QUERY_STRING"];
 parse_str($_SERVER["QUERY_STRING"], $data);
-#print_r($data);
-$string = file_get_contents("controls.json");
+
+$backendFile = "controls-" . $data['profile'] . '.json';
+$string = file_get_contents($backendFile);
 $json = json_decode($string, true);
 $nextSteps = array();
 $nextStepsHow = array();
 $nextDomain = array();
-
 $controls = array();
 foreach($json as $key => $value) {
 	array_push($controls,$key);
 	}
-	
+
 $controlTotal = array_fill(0,8,0);
 $controlDetails = array(array_fill(0,8,0));
 
@@ -68,6 +69,9 @@ function getRating($score) {
 		case ($score > 27):
 			$rating = "Advanced";
 	}
+	if($score == "0"){
+		$rating = "Not Rated";
+	}
 	return $rating;
 }
 
@@ -85,7 +89,6 @@ function getTotalRating($score) {
 
 $totalScore = 0;
 
-
 ?>
 
 
@@ -93,9 +96,14 @@ $totalScore = 0;
 
 <div class="tab">
   <button class="tablinks" onclick="openTab(event, 'Radar')" id="defaultOpen">Radar Chart & Maturity Levels</button>
-  <button class="tablinks" onclick="openTab(event, 'DetailedOutput')">Recommendations</button>
-  <button class="tablinks" onclick="openTab(event, 'NextSteps')">Agenda</button> 
-  <button class="tablinks""><a href="<?php print $urlData; ?>" target= _blank>Detailed Output</a></button> 
+  <button class="tablinks" onclick="openTab(event, 'Recommendations')">Recommendations</button>
+  <button class="tablinks" onclick="openTab(event, 'TableOutput')">Maturity Table</button> 
+  <?php
+  if (isset($_REQUEST['framework'])) {
+	print '<button class="tablinks" onclick="openTab(event, \'Frameworks\')">Security Frameworks</button>';
+}
+  ?>
+  <button class="tablinks""><a href="<?php print $urlData; ?>" target= _blank>Detailed Output</a>&nbsp; <i class='fas fa-external-link-alt'></i></button> 
 
 </div>
 
@@ -104,7 +112,9 @@ $totalScore = 0;
 <div class="htmlChart">
 <div class="radarChart"></div>
 </div>
+
 <div class="bigtableLeft">
+<h1 class="profileHeader">Profile: <?php print $data['profile'];?> </h1>
 
 <table class="spacedTable">
 	<thead>
@@ -132,12 +142,12 @@ foreach ($controls as $control) {
 }
 print '</table>';
 print "<br><table><td class='cell" . getTotalRating($totalScore) ."'>Overall rating: " . getTotalRating($totalScore) . " ($totalScore out of 252)</td></tr></table>";
+
 ?>
 </div>
 </div>
 <!-- Detailed Output -->
-<div id="DetailedOutput" class="tabcontent">
-
+<div id="Recommendations" class="tabcontent">
 <div id="accordion">
 <?php
 foreach ($controls as $control) {
@@ -218,73 +228,182 @@ if ($levelArray) {
 </div>
 <!-- End of Detailed Output -->
 
-
-<!-- Next Steps -->
 </div>
-<div id="NextSteps" class="tabcontent">
-<div class="nextStepsPage">
-<table class="paleBlueRows">
-<thead>
+
+<!-- Start of table output  -->
+
+<div id="TableOutput" class="tabcontent">
+
+<?php
+  function getStatus ($capabilityId) {
+    if ($capabilityId == "1") {
+      $status = "completed";
+    } else {
+      $status = "notcompleted";
+    }
+    print $status;
+  }
+
+  $controlDetail = array_fill(1,8,0);
+  $controlDetails = array_fill(1,8,$controlDetail);
+  
+  foreach($data as $field=>$value){
+	  if (strpos($field,"control") !== false){
+	  $controlNumber = substr($field,7,1);
+	  $controlDetails[$controlNumber][$value] = 1;
+  }
+  }   
+?>
+
+<div class="bigtable">
+
+<table><thead><tr>
+<th class="table-header">Rating</th>
+<th class="table-header">Secure Infrastructure</th>
+<th class="table-header">Secure Data</th>
+<th class="table-header">Secure Identity</th>
+<th class="table-header">Secure Application</th>
+<th class="table-header">Secure Network</th>
+<th class="table-header">Secure Recovery</th>
+<th class="table-header">Secure Operations</th>
+
+</tr></thead>
 <tr>
-<th>Time</th>
-<th>Agenda</th>
+<td class="advanced"></td>
+<td class="<?php getStatus($controlDetails[1][8]); ?>">Identity-Based Perimeter</td>                 
+<td class="<?php getStatus($controlDetails[2][8]); ?>">Anomaly Detection </td>                        
+<td class="<?php getStatus($controlDetails[3][8]); ?>">Contextual / Risk Based Access </td>           
+<td class="<?php getStatus($controlDetails[4][8]); ?>">Interactive Application Security Testing </td> 
+<td class="<?php getStatus($controlDetails[5][8]); ?>">Zero Trust Network Access </td>                
+<td class="<?php getStatus($controlDetails[6][8]); ?>">Predictive Recovery </td>                      
+<td class="<?php getStatus($controlDetails[7][8]); ?>">Purple Teaming </td>                           
 </tr>
-</thead>
-<tbody>
+
 <tr>
-<td>09:00-09:15</td>
-<td>Welcome &amp; Introductions</td>
+<td class="advanced">Advanced</td>
+   
+<td class="<?php getStatus($controlDetails[1][7]); ?>">Service Mesh Security</td>               
+<td class="<?php getStatus($controlDetails[2][7]); ?>">Immutable Storage</td>                   
+<td class="<?php getStatus($controlDetails[3][7]); ?>">AI/ML Anomaly Detection</td>             
+<td class="<?php getStatus($controlDetails[4][7]); ?>">Runtime Application Self Protection</td> 
+<td class="<?php getStatus($controlDetails[5][7]); ?>">Microsegmentation</td>                   
+<td class="<?php getStatus($controlDetails[6][7]); ?>">Advanced Key Management</td>             
+<td class="<?php getStatus($controlDetails[7][7]); ?>">APT Detection & Response</td>            
 </tr>
+
 <tr>
-<td>09:15-10:00</td>
-<td><?php echo $nextSteps[0];  ?></td>
+<td class="advanced"></td>
+<td class="<?php getStatus($controlDetails[1][6]); ?>">Container Runtime Security</td>      
+<td class="<?php getStatus($controlDetails[2][6]); ?>">Automated Posture Management</td>    
+<td class="<?php getStatus($controlDetails[3][6]); ?>">Identity Federation</td>             
+<td class="<?php getStatus($controlDetails[4][6]); ?>">Container Scanning</td>              
+<td class="<?php getStatus($controlDetails[5][6]); ?>">Secure Connections</td>              
+<td class="<?php getStatus($controlDetails[6][6]); ?>">Storage Scanning & Monitoring</td>   
+<td class="<?php getStatus($controlDetails[7][6]); ?>">Threat Intelligence Integration</td> 
+
 </tr>
+
 <tr>
-<td>10:00-10:45</td>
-<td><?php echo $nextSteps[1];  ?></td>
+<td class="strategic"></td>
+<td class="<?php getStatus($controlDetails[1][5]); ?>">Secrets Management</td>                  
+<td class="<?php getStatus($controlDetails[2][5]); ?>">Loss Prevention</td>                     
+<td class="<?php getStatus($controlDetails[3][5]); ?>">Privileged Access Managemet</td>         
+<td class="<?php getStatus($controlDetails[4][5]); ?>">Web Application Firewall</td>            
+<td class="<?php getStatus($controlDetails[5][5]); ?>">Traffic Analysis</td>                    
+<td class="<?php getStatus($controlDetails[6][5]); ?>">Lifecycle Management</td>                
+<td class="<?php getStatus($controlDetails[7][5]); ?>">Orchestration, Automation, Response</td> 
 </tr>
+
 <tr>
-<td class="agendaBreak">10:45-11:00</td>
-<td class="agendaBreak">Break</td>
+<td class="strategic">Strategic</td>
+<td class="<?php getStatus($controlDetails[1][4]); ?>">Automated Policy / Enforcement</td>       
+<td class="<?php getStatus($controlDetails[2][4]); ?>">Tokenization</td>                         
+<td class="<?php getStatus($controlDetails[3][4]); ?>">Single Sign On</td>                       
+<td class="<?php getStatus($controlDetails[4][4]); ?>">Dynamic Application Security Testing</td> 
+<td class="<?php getStatus($controlDetails[5][4]); ?>">Intrusion Detection / Prevention</td>     
+<td class="<?php getStatus($controlDetails[6][4]); ?>">Automated Failovers</td>                  
+<td class="<?php getStatus($controlDetails[7][4]); ?>">Endpoint Detection & Response</td>        
 </tr>
+
 <tr>
-<td>11:00-11:45</td>
-<td><?php echo $nextSteps[2];  ?></td>
+<td class="strategic"></td>
+<td class="<?php getStatus($controlDetails[1][3]); ?>">Logging & Monitoring</td>                    
+<td class="<?php getStatus($controlDetails[2][3]); ?>">Access Control</td>                          
+<td class="<?php getStatus($controlDetails[3][3]); ?>">Multi-Factor Identification</td>             
+<td class="<?php getStatus($controlDetails[4][3]); ?>">Secure Code Practices</td>                   
+<td class="<?php getStatus($controlDetails[5][3]); ?>">Access Control Lists</td>                    
+<td class="<?php getStatus($controlDetails[6][3]); ?>">Consistent Versioning</td>                   
+<td class="<?php getStatus($controlDetails[7][3]); ?>">Security Information & Event Management</td> 
 </tr>
+
 <tr>
-<td>11:45-12:30</td>
-<td><?php echo $nextSteps[3];  ?></td>
+<td class="foundation"></td>
+<td class="<?php getStatus($controlDetails[1][2]); ?>">Segmentation / Isolation</td>            
+<td class="<?php getStatus($controlDetails[2][2]); ?>">Encryption</td>                          
+<td class="<?php getStatus($controlDetails[3][2]); ?>">Role-Based Access Control</td>           
+<td class="<?php getStatus($controlDetails[4][2]); ?>">Static Application Security Testing</td> 
+<td class="<?php getStatus($controlDetails[5][2]); ?>">Secure Protocols</td>                    
+<td class="<?php getStatus($controlDetails[6][2]); ?>">Disaster Recovery Plan</td>              
+<td class="<?php getStatus($controlDetails[7][2]); ?>">Anti-Virus scan</td>                     
 </tr>
+
 <tr>
-<td class="agendaBreak">12:30-13:00</td>
-<td class="agendaBreak">Lunch</td>
+<td class="foundation">Foundation</td>
+<td class="<?php getStatus($controlDetails[1][1]); ?>">Config Management</td>        
+<td class="<?php getStatus($controlDetails[2][1]); ?>">Classification</td>           
+<td class="<?php getStatus($controlDetails[3][1]); ?>">Passwords</td>                
+<td class="<?php getStatus($controlDetails[4][1]); ?>">Dependency Management</td>    
+<td class="<?php getStatus($controlDetails[5][1]); ?>">Firewalls & Segmentation</td> 
+<td class="<?php getStatus($controlDetails[6][1]); ?>">Backup & Redundancy</td>      
+<td class="<?php getStatus($controlDetails[7][1]); ?>">Incident Response Plan</td>   
 </tr>
-<tr>
-<td>13:00-13:45</td>
-<td><?php echo $nextSteps[4];  ?></td>
-</tr>
-<tr>
-<td>13:45-14:30</td>
-<td><?php echo $nextSteps[5];  ?></td>
-</tr>
-<tr>
-<td class="agendaBreak">14:30-14:45</td>
-<td class="agendaBreak">Break</td>
-</tr>
-<tr>
-<td>14:45-15:30</td>
-<td><?php echo $nextSteps[6];  ?></td>
-</tr>
-<tr>
-<td>15:30-16:00</td>
-<td>Wrap Up &amp; Next Steps</td>
-</tr>
-</tbody>
+
 </table>
 
 </div>
+
+
 </div>
+<!-- End of table output  -->
+
+
+
+
+<!-- Start of Security Frameworks -->
+<div id="Frameworks" class="tabcontent">
+
+
+<?php
+if (isset($_REQUEST['framework'])) {
+	$stringFrameworks = file_get_contents("compliance.json");
+	$jsonFrameworks = json_decode($stringFrameworks, true);
+
+$frameworkCount = count($_REQUEST['framework']);
+for ($i = 0; $i < $frameworkCount; $i++) {
+	foreach ($jsonFrameworks as $framework) {
+		if ($framework['name'] == $_REQUEST['framework'][$i]) {
+        $linkFile = $framework['link'];
+		print "<br><div class='niceList'>";
+	print "<ul>";
+
+	if (file_exists($linkFile)) {
+	include $linkFile; 
+	} else {
+		print "<h3 class='frameworkHeader'>No current information for " . $framework['name'] . "<br>";
+	}
+  print "</ul></div>";
+
+	}
+}
+}
+}
+?>
 </div>
+
+
+
+
+
 
 <script src="js/radarChart.js"></script>	
 		<script>
@@ -305,13 +424,15 @@ if ($levelArray) {
 
 			var data = [
 					  [
-						{axis:"Secure Infrastructure",value:<?php echo $controlTotal[1]; ?>},
-						{axis:"Secure Data",value:<?php echo $controlTotal[2]; ?>},
-						{axis:"Secure Identity",value:<?php echo $controlTotal[3]; ?>},
-						{axis:"Secure Application",value:<?php echo $controlTotal[4]; ?>},
-						{axis:"Secure Network",value:<?php echo $controlTotal[5]; ?>},
-						{axis:"Secure Recovery",value:<?php echo $controlTotal[6]; ?>},
-						{axis:"Secure Operations",value:<?php echo $controlTotal[7]; ?>}
+						<?php
+						$numControls = 1;
+						foreach ($controls as $control) {
+							$title = $json[$control]['title'];
+							print '{axis:"' . $title . '",value: ' . $controlTotal[$numControls]. '},';		
+							$numControls++;
+						}
+						?>
+
 					  ]
 					];
 			////////////////////////////////////////////////////////////// 
